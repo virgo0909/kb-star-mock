@@ -23,7 +23,7 @@
   --ink:#3A3D43;             /* 순한 다크그레이 (기존보다 부드럽게) */
   --ink-2:#5B5E64;
   --sub:#9DA0A6;
-  --line:#EFF0F2;
+  --line:#E3E5E9;
   --bg:#F5F6F8;
   --card:#FFFFFF;
   --gray-btn:#F0F1F3;
@@ -211,9 +211,9 @@ svg{display:block}
    ========================================================= */
 .drawer{position:fixed;inset:0;z-index:100;display:none}
 .drawer.on{display:block}
-.drawer .dim{position:absolute;inset:0;background:rgba(0,0,0,.28);opacity:0;transition:opacity .25s}
+.drawer .dim{position:absolute;inset:0;background:rgba(0,0,0,.28);opacity:0;transition:opacity .32s ease}
 .drawer.on .dim{opacity:1}
-.drawer .panel{position:absolute;top:0;right:0;bottom:0;width:88%;max-width:430px;background:#fff;overflow-y:auto;transform:translateX(100%);transition:transform .25s;padding-bottom:40px}
+.drawer .panel{position:absolute;top:0;right:0;bottom:0;width:88%;max-width:430px;background:#fff;overflow-y:auto;transform:translateX(100%);transition:transform .38s cubic-bezier(.22,.61,.36,1);padding-bottom:40px;box-shadow:-8px 0 28px rgba(0,0,0,.12);will-change:transform}
 .drawer.on .panel{transform:none}
 .dhead{display:flex;align-items:center;justify-content:space-between;padding:calc(var(--safe-top) + 14px) 20px 16px}
 .dhead .lo{font-size:16px;color:var(--sub);font-weight:500;display:flex;align-items:center;gap:4px}
