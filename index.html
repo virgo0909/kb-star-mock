@@ -81,8 +81,9 @@ svg{display:block}
 .toggle.on::after{left:23px}
 
 /* 계좌 심볼 */
-.sym{width:34px;height:34px;border-radius:50%;background:var(--brown);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sym{width:34px;height:34px;border-radius:50%;background:var(--brown);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden}
 .sym b{color:var(--yellow);font-size:13px;font-weight:700;font-style:italic}
+.sym img{width:100%;height:100%;object-fit:cover}
 .sym.blue{background:#2A6BD6}
 
 /* =========================================================
@@ -352,7 +353,7 @@ svg{display:block}
     <!-- 계좌 카드 (1/3) -->
     <div class="card" style="margin-bottom:6px">
       <div class="acc-head">
-        <div class="sym"><b>Kᵇ</b></div>
+        <div class="sym" id="acc-sym"></div>
         <div>
           <div class="name">본</div>
           <div class="num">420802-01-049992
@@ -368,11 +369,7 @@ svg{display:block}
         <button class="btn btn-yellow" onclick="nav('history')">계좌이체</button>
         <button class="btn btn-gray" onclick="tap()">연락처 이체</button>
       </div>
-      <div class="contacts">
-        <div class="contact"><span class="sym"><b>Kᵇ</b></span>백두선</div>
-        <div class="contact"><span class="sym blue"><b>·</b></span>홍완표</div>
-        <div class="contact"><span class="sym"><b>Kᵇ</b></span>서울자동김학중</div>
-      </div>
+      <div class="contacts" id="contacts"></div>
     </div>
 
     <div class="pager">
@@ -887,8 +884,48 @@ function applyFilter(){
 }
 
 /* =========================================================
+   홈 계좌 카드 아이콘 — 여기 값만 바꾸면 로고가 교체됩니다
+   각 icon 값:
+     "" 또는 "kb"  → 갈색 원 + Kᵇ 마크
+     "blue"        → 파란 원
+     "이미지주소.png" → 그 이미지로 교체 (원형으로 잘림)
+   ========================================================= */
+const HOME = {
+  accountIcon: "kb",                       // 상단 계좌 심볼
+  contacts: [                              // 아래 연락처 3명
+    { name: "백두선",        icon: "kb"   },
+    { name: "홍완표",        icon: "blue" },
+    { name: "서울자동김학중", icon: "kb"   },
+  ],
+};
+
+// 문자열이 이미지 주소인지 판별 (http… 또는 .png/.jpg/.svg 등)
+function isImg(s){ return /^https?:|\.(png|jpe?g|svg|gif|webp)$/i.test(s); }
+
+// 아이콘 한 칸 HTML 생성 (텍스트 마크 or 이미지)
+function symHTML(icon, cls){
+  if (isImg(icon)) return `<span class="sym ${cls||''}"><img src="${icon}" alt=""></span>`;
+  if (icon === 'blue') return `<span class="sym blue ${cls||''}"><b>·</b></span>`;
+  return `<span class="sym ${cls||''}"><b>Kᵇ</b></span>`;   // 기본 Kᵇ
+}
+
+function renderHomeAccount(){
+  // 상단 계좌 심볼
+  const s = document.getElementById('acc-sym');
+  if (isImg(HOME.accountIcon)) s.innerHTML = `<img src="${HOME.accountIcon}" alt="">`;
+  else if (HOME.accountIcon === 'blue') { s.className = 'sym blue'; s.innerHTML = '<b>·</b>'; }
+  else s.innerHTML = '<b>Kᵇ</b>';
+
+  // 연락처 목록
+  document.getElementById('contacts').innerHTML = HOME.contacts.map(c =>
+    `<div class="contact">${symHTML(c.icon)}${c.name}</div>`
+  ).join('');
+}
+
+/* =========================================================
    페이지 로드 시 시작
    ========================================================= */
+renderHomeAccount();
 initSegs();
 loadData();          // 데이터 미리 로드
 startSplash();       // 첫 화면(스플래시) 시작
