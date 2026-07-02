@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="KBstar">
 <!-- 아이콘: 현재 쓰고 있는 파일명으로 맞추세요 (icon-180.png 또는 IMG_9780.jpg 등) -->
-<link rel="apple-touch-icon" href="IMG_9780.jpg">
+<link rel="apple-touch-icon" href="icon-180.png">
 
 <style>
 /* =========================================================
@@ -252,6 +252,51 @@ svg{display:block}
 .sp-slogan{align-self:start;font-size:32px;font-weight:800;line-height:1.35;color:#2B2A26;white-space:pre-line;letter-spacing:-0.5px}
 .sp-spin{align-self:end;justify-self:center;width:38px;height:38px;border:4px solid rgba(0,0,0,.12);border-top-color:#2B2A26;border-radius:50%;animation:spin .8s linear infinite}
 
+/* =========================================================
+   조회기간 설정 바텀시트
+   ========================================================= */
+.sheet{position:fixed;inset:0;z-index:200;display:none}
+.sheet.on{display:block}
+.sheet-dim{position:absolute;inset:0;background:rgba(0,0,0,.4);opacity:0;transition:opacity .25s}
+.sheet.on .sheet-dim{opacity:1}
+.sheet-panel{position:absolute;left:50%;bottom:0;transform:translateX(-50%) translateY(100%);width:100%;max-width:480px;background:#fff;border-radius:22px 22px 0 0;transition:transform .3s cubic-bezier(.2,.8,.2,1);max-height:92dvh;display:flex;flex-direction:column;padding-bottom:calc(var(--safe-bottom))}
+.sheet.on .sheet-panel{transform:translateX(-50%) translateY(0)}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;padding:22px 22px 8px}
+.sheet-head h2{font-size:21px;font-weight:800}
+.sheet-body{overflow-y:auto;padding:12px 22px 20px}
+.fld-label{font-size:15px;color:var(--sub);font-weight:500;margin:22px 2px 10px}
+.fld-label:first-child{margin-top:6px}
+
+/* 세그먼트 버튼 */
+.seg{display:grid;gap:0;border:1px solid #E1E3E7;border-radius:12px;overflow:hidden}
+.seg5{grid-template-columns:repeat(5,1fr)}
+.seg3{grid-template-columns:repeat(3,1fr)}
+.seg2{grid-template-columns:repeat(2,1fr)}
+.seg button{padding:15px 0;font-size:15px;font-weight:500;color:var(--ink-2);background:#fff;border-right:1px solid #E1E3E7;position:relative}
+.seg button:last-child{border-right:0}
+.seg button.on{color:var(--ink);font-weight:700;box-shadow:inset 0 0 0 2px var(--ink);border-radius:11px;border-right-color:transparent}
+
+.custom-range{display:none;align-items:center;gap:10px;margin-top:10px}
+.custom-range.show{display:flex}
+.custom-range input{flex:1;border:1px solid #E1E3E7;border-radius:10px;padding:12px;font-size:15px;color:var(--ink)}
+.custom-range .tilde{color:var(--sub)}
+
+.amt-range{display:flex;align-items:center;gap:10px}
+.amt-in{flex:1;display:flex;align-items:center;gap:6px;border-bottom:1.5px solid var(--ink);padding:8px 2px}
+.amt-in input{flex:1;font-size:17px;font-weight:700;color:var(--ink)}
+.amt-in input::placeholder{color:#C1C4CA;font-weight:600}
+.amt-in span{font-size:16px;font-weight:700}
+.amt-range .dash{color:var(--sub)}
+
+.sheet-submit{background:var(--yellow);color:#4a3d05;font-size:17px;font-weight:800;padding:18px 0;width:100%;margin-top:6px}
+.sheet-submit:active{filter:brightness(.97)}
+
+/* 월 그룹 헤더 */
+.month{padding:16px 20px 8px;font-size:18px;font-weight:700;display:flex;align-items:center;justify-content:space-between;cursor:pointer}
+.month svg{width:19px;height:19px;color:var(--sub);transition:transform .2s}
+.month.collapsed svg{transform:rotate(180deg)}
+.tx-empty{text-align:center;color:var(--sub);font-size:15px;padding:60px 0}
+
 /* 로딩 스피너 */
 .loading{position:fixed;inset:0;background:rgba(255,255,255,.55);display:none;align-items:center;justify-content:center;z-index:9999;backdrop-filter:blur(1px)}
 .loading.on{display:flex}
@@ -471,7 +516,7 @@ svg{display:block}
 
     <div class="filter">
       <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="#3A3D42" stroke-width="1.8"/><path d="M20 20l-3.5-3.5" stroke="#3A3D42" stroke-width="1.8" stroke-linecap="round"/></svg>
-      <button class="fbtn" onclick="tap()">3개월 · 전체 · 최신순
+      <button class="fbtn" onclick="openFilter()"><span id="filter-label">3개월 · 전체 · 최신순</span>
         <svg viewBox="0 0 24 24" fill="none" width="20" height="20"><path d="M6 9l6 6 6-6" stroke="#26282C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
       <div class="icons">
@@ -481,12 +526,8 @@ svg{display:block}
     </div>
 
     <div class="range">
-      <div class="d">2026.04.03 ~ 2026.07.02</div>
-      <div class="tg">잔액표기 <span class="toggle on" onclick="this.classList.toggle('on')"></span></div>
-    </div>
-
-    <div class="month">2026.07
-      <svg viewBox="0 0 24 24" fill="none"><path d="M6 15l6-6 6 6" stroke="#8E9297" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div class="d" id="range-label">2026.04.03 ~ 2026.07.02</div>
+      <div class="tg">잔액표기 <span class="toggle on" id="show-bal-toggle" onclick="toggleShowBal(this)"></span></div>
     </div>
 
     <div id="tx-list"></div>
@@ -552,6 +593,56 @@ svg{display:block}
         <button onclick="tap()">패밀리뱅킹<small>부부 모임통장/노후자금, 우리아이 금융상품 관리</small></button>
         <button onclick="tap()">휴면예금 · 보험금 찾기</button>
       </div>
+    </div>
+  </div>
+
+  <!-- ==================== 조회기간 설정 바텀시트 ==================== -->
+  <div class="sheet" id="filter-sheet">
+    <div class="sheet-dim" onclick="closeFilter()"></div>
+    <div class="sheet-panel">
+      <div class="sheet-head">
+        <h2>조회기간 설정</h2>
+        <button onclick="closeFilter()" aria-label="닫기"><svg viewBox="0 0 24 24" fill="none" width="26" height="26"><path d="M6 6l12 12M18 6L6 18" stroke="#3A3D42" stroke-width="2" stroke-linecap="round"/></svg></button>
+      </div>
+
+      <div class="sheet-body">
+        <div class="fld-label">기간선택</div>
+        <div class="seg seg5" id="seg-period">
+          <button data-v="today">오늘</button>
+          <button data-v="1m">1개월</button>
+          <button data-v="3m" class="on">3개월</button>
+          <button data-v="6m">6개월</button>
+          <button data-v="custom">직접입력</button>
+        </div>
+
+        <div class="custom-range" id="custom-range">
+          <input type="date" id="date-from" value="2026-04-03">
+          <span class="tilde">~</span>
+          <input type="date" id="date-to" value="2026-07-02">
+        </div>
+
+        <div class="fld-label">거래유형</div>
+        <div class="seg seg3" id="seg-type">
+          <button data-v="all" class="on">전체</button>
+          <button data-v="in">입금</button>
+          <button data-v="out">출금</button>
+        </div>
+
+        <div class="fld-label">정렬순서</div>
+        <div class="seg seg2" id="seg-sort">
+          <button data-v="desc" class="on">최신순</button>
+          <button data-v="asc">과거순</button>
+        </div>
+
+        <div class="fld-label">조회금액</div>
+        <div class="amt-range">
+          <div class="amt-in"><input type="number" inputmode="numeric" id="amt-min" placeholder="최소"><span>원</span></div>
+          <span class="dash">-</span>
+          <div class="amt-in"><input type="number" inputmode="numeric" id="amt-max" placeholder="최대"><span>원</span></div>
+        </div>
+      </div>
+
+      <button class="sheet-submit" onclick="applyFilter()">조회</button>
     </div>
   </div>
 
@@ -625,36 +716,182 @@ function openMenu(){ document.getElementById('drawer').classList.add('on'); }
 function closeMenu(silent){ document.getElementById('drawer').classList.remove('on'); }
 
 /* =========================================================
-   거래내역 더미 데이터 (스크린샷 그대로)
+   거래내역: 외부 파일(transactions.json)을 읽어 필터·조회
    ========================================================= */
-const transactions = [
-  { time: '07.02 13:53:06', type: '스마트입금', who: '강명훈', amount: 200000, after: '14,841,074' },
-  { time: '07.01 18:34:41', type: '스마트입금', who: '송태현', amount: 100000, after: '14,641,074' },
-  { time: '06.30 09:12:20', type: '스마트출금', who: '관리비', amount: -158000, after: '14,541,074' },
-  { time: '06.28 20:05:11', type: '체크카드',   who: '이마트 트레이더스', amount: -64200, after: '14,699,074' },
-  { time: '06.27 12:41:55', type: '스마트입금', who: '중고거래', amount: 45000, after: '14,763,274' },
-];
+let DATA = null;                 // 로드된 데이터
+let showBal = true;              // 잔액표기 on/off
+const ANCHOR = '2026-07-02';     // 조회 기준일(=오늘)
 
-function renderTx(){
-  const won = n => Math.abs(n).toLocaleString('ko-KR');
-  document.getElementById('tx-list').innerHTML = transactions.map(t => {
-    const plus = t.amount > 0;
-    return `
-      <div class="tx">
-        <div class="time">${t.time}<b>| ${t.type}</b></div>
-        <div class="row">
-          <div class="who">${t.who}</div>
-          <div>
-            <div class="amt ${plus ? '' : 'minus'}">${plus ? '+' : '-'}${won(t.amount)}<span style="font-size:14px;font-weight:600">원</span></div>
-            <div class="after">${t.after}원</div>
-          </div>
-        </div>
-      </div>`;
-  }).join('');
+// 조회 조건 상태
+let filter = { period:'3m', from:null, to:null, type:'all', sort:'desc', amtMin:null, amtMax:null };
+
+const won = n => Math.abs(n).toLocaleString('ko-KR');
+const fmtISO = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+
+// 데이터 로드 (GitHub Pages 등 http(s)에서 동작)
+async function loadData(){
+  try {
+    const res = await fetch('transactions.json', { cache:'no-store' });
+    DATA = await res.json();
+  } catch(e){
+    DATA = { transactions: [] };
+    console.error('transactions.json 로드 실패:', e);
+  }
+  computePeriod();
 }
 
-/* 페이지 로드 시 첫 화면(스플래시) 시작 */
-startSplash();
+// 기간 프리셋 → from/to 날짜 계산
+function computePeriod(){
+  if (filter.period === 'custom'){
+    filter.from = document.getElementById('date-from').value;
+    filter.to   = document.getElementById('date-to').value;
+    return;
+  }
+  if (filter.period === 'today'){ filter.from = ANCHOR; filter.to = ANCHOR; return; }
+  const months = { '1m':1, '3m':3, '6m':6 }[filter.period];
+  const d = new Date(ANCHOR + 'T00:00:00');
+  d.setMonth(d.getMonth() - months);
+  d.setDate(d.getDate() + 1);
+  filter.from = fmtISO(d);
+  filter.to = ANCHOR;
+}
+
+// 조건에 맞는 거래만 추려서 정렬
+function getFiltered(){
+  if (!DATA) return [];
+  let list = DATA.transactions.filter(t => t.date >= filter.from && t.date <= filter.to);
+  if (filter.type === 'in')  list = list.filter(t => t.amount > 0);
+  if (filter.type === 'out') list = list.filter(t => t.amount < 0);
+  if (filter.amtMin != null) list = list.filter(t => Math.abs(t.amount) >= filter.amtMin);
+  if (filter.amtMax != null) list = list.filter(t => Math.abs(t.amount) <= filter.amtMax);
+  list = list.slice().sort((a,b) => {
+    const ka = a.date + 'T' + a.time, kb = b.date + 'T' + b.time;
+    return filter.sort === 'desc' ? (ka < kb ? 1 : ka > kb ? -1 : 0)
+                                  : (ka < kb ? -1 : ka > kb ? 1 : 0);
+  });
+  return list;
+}
+
+// 라벨(필터 요약 / 기간) 갱신
+function updateLabels(){
+  const pl = { today:'오늘', '1m':'1개월', '3m':'3개월', '6m':'6개월', custom:'기간지정' }[filter.period];
+  const tl = { all:'전체', in:'입금', out:'출금' }[filter.type];
+  const sl = { desc:'최신순', asc:'과거순' }[filter.sort];
+  document.getElementById('filter-label').textContent = `${pl} · ${tl} · ${sl}`;
+  const f = (filter.from||'').replace(/-/g,'.'), t = (filter.to||'').replace(/-/g,'.');
+  document.getElementById('range-label').textContent = `${f} ~ ${t}`;
+}
+
+// 한 건 렌더
+function txRow(t){
+  const plus = t.amount > 0;
+  const md = t.date.slice(5).replace('-','.');   // MM.DD
+  return `
+    <div class="tx">
+      <div class="time">${md} ${t.time}<b>| ${t.type}</b></div>
+      <div class="row">
+        <div class="who">${t.who}</div>
+        <div>
+          <div class="amt ${plus ? '' : 'minus'}">${plus ? '+' : '-'}${won(t.amount)}<span style="font-size:14px;font-weight:600">원</span></div>
+          ${showBal ? `<div class="after">${won(t.after)}원</div>` : ''}
+        </div>
+      </div>
+    </div>`;
+}
+
+// 목록 렌더 (월별 그룹)
+function renderTx(){
+  const el = document.getElementById('tx-list');
+  if (!DATA){                                  // 아직 로드 전
+    el.innerHTML = '<div class="tx-empty">불러오는 중…</div>';
+    loadData().then(() => renderTx());
+    return;
+  }
+  updateLabels();
+  const list = getFiltered();
+  if (!list.length){ el.innerHTML = '<div class="tx-empty">거래 내역이 없어요</div>'; return; }
+
+  // 월(YYYY.MM)별 그룹핑 — 정렬 순서 유지
+  const groups = []; const idx = {};
+  list.forEach(t => {
+    const m = t.date.slice(0,7).replace('-','.');
+    if (idx[m] == null){ idx[m] = groups.length; groups.push({ m, items: [] }); }
+    groups[idx[m]].items.push(t);
+  });
+
+  el.innerHTML = groups.map(g => `
+    <div class="month" onclick="toggleMonth(this)">${g.m}
+      <svg viewBox="0 0 24 24" fill="none"><path d="M6 15l6-6 6 6" stroke="#8E9297" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="month-body">${g.items.map(txRow).join('')}</div>
+  `).join('');
+}
+
+// 월 헤더 접기/펼치기
+function toggleMonth(el){
+  el.classList.toggle('collapsed');
+  const body = el.nextElementSibling;
+  if (body) body.style.display = el.classList.contains('collapsed') ? 'none' : '';
+}
+
+// 잔액표기 토글
+function toggleShowBal(el){
+  el.classList.toggle('on');
+  showBal = el.classList.contains('on');
+  renderTx();
+}
+
+/* =========================================================
+   조회기간 설정 바텀시트
+   ========================================================= */
+function setSeg(segId, v){
+  document.querySelectorAll('#' + segId + ' button').forEach(b => b.classList.toggle('on', b.dataset.v === v));
+}
+function syncSheet(){
+  setSeg('seg-period', filter.period);
+  setSeg('seg-type', filter.type);
+  setSeg('seg-sort', filter.sort);
+  document.getElementById('custom-range').classList.toggle('show', filter.period === 'custom');
+  document.getElementById('amt-min').value = filter.amtMin ?? '';
+  document.getElementById('amt-max').value = filter.amtMax ?? '';
+}
+function openFilter(){ syncSheet(); document.getElementById('filter-sheet').classList.add('on'); }
+function closeFilter(){ document.getElementById('filter-sheet').classList.remove('on'); }
+
+// 세그먼트 버튼 클릭 처리 (한 그룹에서 하나만 선택)
+function initSegs(){
+  document.querySelectorAll('.seg').forEach(seg => {
+    seg.addEventListener('click', e => {
+      const btn = e.target.closest('button'); if (!btn) return;
+      seg.querySelectorAll('button').forEach(b => b.classList.remove('on'));
+      btn.classList.add('on');
+      if (seg.id === 'seg-period'){
+        document.getElementById('custom-range').classList.toggle('show', btn.dataset.v === 'custom');
+      }
+    });
+  });
+}
+
+// "조회" 버튼 → 조건 반영 후 로딩 스피너 띄우고 갱신
+function applyFilter(){
+  filter.period = document.querySelector('#seg-period .on').dataset.v;
+  filter.type   = document.querySelector('#seg-type .on').dataset.v;
+  filter.sort   = document.querySelector('#seg-sort .on').dataset.v;
+  const mn = document.getElementById('amt-min').value;
+  const mx = document.getElementById('amt-max').value;
+  filter.amtMin = mn === '' ? null : Number(mn);
+  filter.amtMax = mx === '' ? null : Number(mx);
+  computePeriod();
+  closeFilter();
+  withLoading(() => renderTx());
+}
+
+/* =========================================================
+   페이지 로드 시 시작
+   ========================================================= */
+initSegs();
+loadData();          // 데이터 미리 로드
+startSplash();       // 첫 화면(스플래시) 시작
 </script>
 </body>
 </html>
