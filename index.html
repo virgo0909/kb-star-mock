@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>KB클론</title>
+
+<!-- ===== 아이폰 홈 화면 추가용 PWA 메타 ===== -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="KB클론">
+<!-- 아이콘 파일이 있으면 아래 주석 해제 후 같은 폴더에 icon-180.png 배치 -->
+<!-- <link rel="apple-touch-icon" href="icon-180.png"> -->
+
+<style>
+/* =========================================================
+   1) 디자인 토큰 — KB 브랜드 느낌의 변수들
+   ========================================================= */
+:root {
+  --kb-yellow: #FFBC00;      /* KB 시그니처 옐로 */
+  --kb-yellow-dark: #F5A800;
+  --kb-gray: #60584C;        /* KB 다크 그레이(브라운 톤) */
+  --ink: #26282C;            /* 본문 텍스트 */
+  --ink-sub: #8B8E94;        /* 보조 텍스트 */
+  --bg: #F2F3F5;             /* 앱 배경 */
+  --card: #FFFFFF;
+  --line: #ECEDF0;
+  --minus: #26282C;          /* 지출 금액 색 */
+  --plus: #3B6EF5;           /* 수입 금액 색 */
+  --danger: #E5484D;
+  --radius: 16px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  font-family: -apple-system, "Apple SD Gothic Neo", "Pretendard", "Noto Sans KR", sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+button { font: inherit; border: 0; background: none; cursor: pointer; color: inherit; }
+input { font: inherit; border: 0; outline: none; background: none; }
+
+/* =========================================================
+   2) 앱 프레임 / 화면 전환
+   ========================================================= */
+#app { max-width: 480px; margin: 0 auto; min-height: 100dvh; position: relative; }
+
+.screen {
+  display: none;
+  padding: calc(var(--safe-top) + 12px) 16px calc(96px + var(--safe-bottom));
+  min-height: 100dvh;
+  animation: fadein .18s ease;
+}
+.screen.active { display: block; }
+@keyframes fadein { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .screen { animation: none; } }
+
+/* =========================================================
+   3) 공통 컴포넌트
+   ========================================================= */
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 6px 2px 14px; }
+.brand { display: flex; align-items: center; gap: 6px; font-weight: 800; font-size: 18px; color: var(--kb-gray); }
+.brand .star { color: var(--kb-yellow); font-size: 20px; }
+.icon-btn { font-size: 20px; padding: 6px; color: var(--kb-gray); }
+
+.card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+  margin-bottom: 12px;
+}
+
+.section-title { font-size: 15px; font-weight: 700; margin: 20px 4px 10px; display: flex; justify-content: space-between; align-items: center; }
+.section-title .more { font-size: 13px; font-weight: 500; color: var(--ink-sub); }
+
+/* =========================================================
+   4) 홈 화면
+   ========================================================= */
+.greet { padding: 4px 4px 16px; }
+.greet h1 { font-size: 22px; font-weight: 800; line-height: 1.35; }
+.greet p { color: var(--ink-sub); font-size: 14px; margin-top: 4px; }
+
+.account .acc-head { display: flex; justify-content: space-between; align-items: center; }
+.acc-name { font-size: 14px; color: var(--ink-sub); }
+.acc-num { font-size: 12px; color: var(--ink-sub); margin-top: 2px; }
+.acc-balance { font-size: 26px; font-weight: 800; margin: 14px 0 16px; letter-spacing: -0.5px; }
+.acc-balance small { font-size: 18px; font-weight: 700; }
+.acc-actions { display: flex; gap: 8px; }
+.btn {
+  flex: 1; padding: 13px 0; border-radius: 12px;
+  font-weight: 700; font-size: 15px; text-align: center;
+  transition: transform .06s ease;
+}
+.btn:active { transform: scale(.97); }
+.btn-yellow { background: var(--kb-yellow); color: var(--ink); }
+.btn-gray { background: #F4F5F7; color: var(--ink); }
+.btn-dark { background: var(--kb-gray); color: #fff; }
+
+.eye { font-size: 16px; color: var(--ink-sub); padding: 4px 6px; }
+
+.quick { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.quick button {
+  background: var(--card); border-radius: 14px; padding: 14px 0 12px;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 600; color: var(--ink);
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+}
+.quick .emo { font-size: 22px; }
+
+.tx-row { display: flex; align-items: center; gap: 12px; padding: 13px 0; border-bottom: 1px solid var(--line); }
+.tx-row:last-child { border-bottom: 0; }
+.tx-icon {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: #FFF4D6; display: flex; align-items: center; justify-content: center;
+  font-size: 18px; flex-shrink: 0;
+}
+.tx-info { flex: 1; min-width: 0; }
+.tx-name { font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tx-meta { font-size: 12px; color: var(--ink-sub); margin-top: 2px; }
+.tx-amt { font-size: 15px; font-weight: 700; text-align: right; }
+.tx-amt.minus { color: var(--minus); }
+.tx-amt.plus { color: var(--plus); }
+.tx-amt .after { display: block; font-size: 11px; font-weight: 400; color: var(--ink-sub); margin-top: 2px; }
+
+.reset-link { display: block; text-align: center; color: var(--ink-sub); font-size: 12px; padding: 20px 0 4px; text-decoration: underline; width: 100%; }
+
+/* =========================================================
+   5) 거래내역 화면 — 검색 + 필터 칩 + 날짜 그룹
+   ========================================================= */
+.page-title { font-size: 20px; font-weight: 800; padding: 6px 4px 14px; }
+
+.search {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--card); border-radius: 12px; padding: 12px 14px; margin-bottom: 12px;
+}
+.search input { flex: 1; font-size: 15px; }
+.search input::placeholder { color: var(--ink-sub); }
+
+.chips { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 14px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.chips::-webkit-scrollbar { display: none; }
+.chip {
+  flex-shrink: 0; padding: 8px 14px; border-radius: 999px;
+  background: var(--card); font-size: 13px; font-weight: 600; color: var(--ink-sub);
+  border: 1px solid var(--line);
+}
+.chip.on { background: var(--kb-gray); color: #fff; border-color: var(--kb-gray); }
+
+.date-group { margin-bottom: 4px; }
+.date-label { font-size: 12px; font-weight: 700; color: var(--ink-sub); padding: 14px 4px 6px; }
+.empty { text-align: center; color: var(--ink-sub); font-size: 14px; padding: 48px 0; }
+
+/* =========================================================
+   6) 이체 화면 — 3단계 플로우
+   ========================================================= */
+.step { display: none; }
+.step.active { display: block; }
+
+.pick-acc { width: 100%; text-align: left; }
+.pick-acc .card { display: flex; justify-content: space-between; align-items: center; }
+.pick-acc .arrow { color: var(--ink-sub); }
+
+.amount-display { text-align: center; padding: 40px 0 8px; }
+.amount-display .to { font-size: 15px; color: var(--ink-sub); margin-bottom: 12px; }
+.amount-display .num { font-size: 34px; font-weight: 800; letter-spacing: -1px; min-height: 46px; }
+.amount-display .num.placeholder { color: #C9CCD1; font-size: 22px; font-weight: 600; padding-top: 8px; }
+.amount-display .warn { color: var(--danger); font-size: 13px; margin-top: 8px; min-height: 18px; }
+
+.keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 16px 0; }
+.keypad button { padding: 18px 0; font-size: 22px; font-weight: 600; border-radius: 12px; }
+.keypad button:active { background: #E9EAEE; }
+
+.done-wrap { text-align: center; padding: 80px 0 40px; }
+.done-wrap .check {
+  width: 72px; height: 72px; border-radius: 50%; background: var(--kb-yellow);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 34px; margin: 0 auto 20px;
+}
+.done-wrap h2 { font-size: 20px; font-weight: 800; margin-bottom: 8px; }
+.done-wrap p { color: var(--ink-sub); font-size: 14px; }
+
+/* =========================================================
+   7) 소비분석 화면 — conic-gradient 도넛 (라이브러리 無)
+   ========================================================= */
+.donut-wrap { display: flex; flex-direction: column; align-items: center; padding: 8px 0 4px; }
+.donut { width: 168px; height: 168px; border-radius: 50%; position: relative; }
+.donut::after {
+  content: ""; position: absolute; inset: 22%;
+  background: var(--card); border-radius: 50%;
+}
+.donut .center {
+  position: absolute; inset: 0; z-index: 1;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.donut .center b { font-size: 18px; font-weight: 800; }
+.donut .center span { font-size: 12px; color: var(--ink-sub); }
+
+.cat-row { display: flex; align-items: center; gap: 10px; padding: 11px 0; border-bottom: 1px solid var(--line); }
+.cat-row:last-child { border-bottom: 0; }
+.dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.cat-name { flex: 1; font-size: 14px; font-weight: 600; }
+.cat-pct { font-size: 12px; color: var(--ink-sub); margin-right: 8px; }
+.cat-amt { font-size: 14px; font-weight: 700; }
+
+/* =========================================================
+   8) 하단 탭바
+   ========================================================= */
+.tabbar {
+  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 480px;
+  background: var(--card); border-top: 1px solid var(--line);
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  padding: 8px 0 calc(8px + var(--safe-bottom));
+  z-index: 10;
+}
+.tabbar button {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  font-size: 11px; font-weight: 600; color: var(--ink-sub); padding: 4px 0;
+}
+.tabbar button .emo { font-size: 21px; filter: grayscale(1); opacity: .55; }
+.tabbar button.on { color: var(--kb-gray); }
+.tabbar button.on .emo { filter: none; opacity: 1; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ================= 홈 ================= -->
+  <section class="screen active" id="screen-home">
+    <div class="topbar">
+      <div class="brand"><span class="star">★</span>KB클론뱅킹</div>
+      <button class="icon-btn" aria-label="알림">🔔</button>
+    </div>
+
+    <div class="greet">
+      <h1 id="greeting">좋은 하루예요,<br>스타님 👋</h1>
+      <p id="today"></p>
+    </div>
+
+    <div id="account-list"><!-- 계좌 카드 렌더링 --></div>
+
+    <div class="section-title">빠른 메뉴</div>
+    <div class="quick">
+      <button onclick="startTransfer()"><span class="emo">💸</span>이체</button>
+      <button onclick="go('tx')"><span class="emo">🧾</span>거래내역</button>
+      <button onclick="go('stats')"><span class="emo">📊</span>소비분석</button>
+      <button onclick="alert('목업이라 준비 중이에요 🙂')"><span class="emo">🎁</span>혜택</button>
+    </div>
+
+    <div class="section-title">최근 거래 <button class="more" onclick="go('tx')">전체보기 ></button></div>
+    <div class="card" id="recent-tx"></div>
+
+    <button class="reset-link" onclick="resetAll()">더미 데이터 초기화</button>
+  </section>
+
+  <!-- ================= 거래내역 ================= -->
+  <section class="screen" id="screen-tx">
+    <div class="page-title">거래내역</div>
+
+    <div class="search">🔍<input id="search-input" placeholder="가맹점 검색" oninput="renderTx()"></div>
+
+    <div class="chips" id="chips"><!-- 카테고리 칩 렌더링 --></div>
+
+    <div id="tx-list"></div>
+  </section>
+
+  <!-- ================= 이체 ================= -->
+  <section class="screen" id="screen-transfer">
+    <div class="page-title">이체</div>
+
+    <!-- STEP 1: 받는 사람 선택 -->
+    <div class="step active" id="step-1">
+      <div class="section-title">누구에게 보낼까요?</div>
+      <div id="payee-list"></div>
+    </div>
+
+    <!-- STEP 2: 금액 입력 -->
+    <div class="step" id="step-2">
+      <div class="amount-display">
+        <div class="to" id="transfer-to"></div>
+        <div class="num placeholder" id="amount-view">보낼 금액 입력</div>
+        <div class="warn" id="amount-warn"></div>
+      </div>
+      <div class="keypad">
+        <button onclick="key('1')">1</button><button onclick="key('2')">2</button><button onclick="key('3')">3</button>
+        <button onclick="key('4')">4</button><button onclick="key('5')">5</button><button onclick="key('6')">6</button>
+        <button onclick="key('7')">7</button><button onclick="key('8')">8</button><button onclick="key('9')">9</button>
+        <button onclick="key('00')">00</button><button onclick="key('0')">0</button><button onclick="key('back')">←</button>
+      </div>
+      <button class="btn btn-yellow" style="width:100%" onclick="confirmTransfer()">보내기</button>
+    </div>
+
+    <!-- STEP 3: 완료 -->
+    <div class="step" id="step-3">
+      <div class="done-wrap">
+        <div class="check">✓</div>
+        <h2 id="done-title">이체 완료</h2>
+        <p id="done-desc"></p>
+      </div>
+      <button class="btn btn-dark" style="width:100%" onclick="go('home')">확인</button>
+    </div>
+  </section>
+
+  <!-- ================= 소비분석 ================= -->
+  <section class="screen" id="screen-stats">
+    <div class="page-title">이번 달 소비분석</div>
+    <div class="card">
+      <div class="donut-wrap">
+        <div class="donut" id="donut">
+          <div class="center"><b id="donut-total"></b><span>총 지출</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="card" id="cat-list"></div>
+  </section>
+
+  <!-- ================= 하단 탭 ================= -->
+  <nav class="tabbar">
+    <button data-tab="home" class="on" onclick="go('home')"><span class="emo">🏠</span>홈</button>
+    <button data-tab="tx" onclick="go('tx')"><span class="emo">🧾</span>거래내역</button>
+    <button data-tab="transfer" onclick="startTransfer()"><span class="emo">💸</span>이체</button>
+    <button data-tab="stats" onclick="go('stats')"><span class="emo">📊</span>자산분석</button>
+  </nav>
+</div>
+
+<script>
+/* =========================================================
+   더미 데이터 — 실제 앱에서 "서버가 주는 것"을 전부 여기서 대체
+   ========================================================= */
+const DEFAULT_DATA = {
+  accounts: [
+    { id: 1, name: "KB클론 입출금통장", num: "123456-01-987654", balance: 2847300 },
+    { id: 2, name: "KB클론 자유적금",   num: "123456-25-112233", balance: 5200000 },
+  ],
+  // amount: 음수 = 지출, 양수 = 수입
+  transactions: [
+    { id: 1,  date: "2026-07-02", name: "스타벅스 역삼점",  cat: "카페",   amount: -6100 },
+    { id: 2,  date: "2026-07-02", name: "GS25 편의점",      cat: "식비",   amount: -4800 },
+    { id: 3,  date: "2026-07-01", name: "6월 급여",          cat: "수입",   amount: 3200000 },
+    { id: 4,  date: "2026-07-01", name: "지하철",            cat: "교통",   amount: -1550 },
+    { id: 5,  date: "2026-06-30", name: "쿠팡",              cat: "쇼핑",   amount: -38900 },
+    { id: 6,  date: "2026-06-30", name: "김밥천국",          cat: "식비",   amount: -9500 },
+    { id: 7,  date: "2026-06-29", name: "넷플릭스",          cat: "구독",   amount: -17000 },
+    { id: 8,  date: "2026-06-29", name: "메가커피",          cat: "카페",   amount: -2900 },
+    { id: 9,  date: "2026-06-28", name: "택시",              cat: "교통",   amount: -12400 },
+    { id: 10, date: "2026-06-28", name: "이마트",            cat: "쇼핑",   amount: -64200 },
+    { id: 11, date: "2026-06-27", name: "중고거래 판매",     cat: "수입",   amount: 45000 },
+    { id: 12, date: "2026-06-27", name: "배달의민족",        cat: "식비",   amount: -23500 },
+  ],
+  payees: [
+    { id: 1, name: "김철수", bank: "국민은행", num: "941102-01-556677" },
+    { id: 2, name: "이영희", bank: "카카오뱅크", num: "3333-05-1234567" },
+    { id: 3, name: "박지민", bank: "토스뱅크", num: "1000-2233-4455" },
+  ],
+};
+
+const CAT_ICON = { "식비":"🍚", "카페":"☕️", "교통":"🚇", "쇼핑":"🛍️", "구독":"📺", "수입":"💰", "이체":"💸" };
+const CAT_COLOR = { "식비":"#FFBC00", "카페":"#F5A800", "교통":"#60584C", "쇼핑":"#3B6EF5", "구독":"#9B8AFB", "이체":"#8B8E94" };
+
+/* ---------- 상태: localStorage 로 유지 ---------- */
+let DB = load();
+function load() {
+  try { const raw = localStorage.getItem("kbclone"); if (raw) return JSON.parse(raw); } catch(e) {}
+  return structuredClone(DEFAULT_DATA);
+}
+function save() { localStorage.setItem("kbclone", JSON.stringify(DB)); }
+function resetAll() {
+  if (!confirm("더미 데이터를 처음 상태로 되돌릴까요?")) return;
+  DB = structuredClone(DEFAULT_DATA); save(); renderAll(); go("home");
+}
+
+let hideBalance = localStorage.getItem("kbclone-hide") === "1";
+let activeChip = "전체";
+
+/* ---------- 유틸 ---------- */
+const won = n => Math.abs(n).toLocaleString("ko-KR");
+const fmtDate = d => { const [y,m,dd] = d.split("-"); return `${Number(m)}월 ${Number(dd)}일`; };
+const $ = sel => document.querySelector(sel);
+
+/* =========================================================
+   화면 전환
+   ========================================================= */
+function go(name) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  $("#screen-" + name).classList.add("active");
+  document.querySelectorAll(".tabbar button").forEach(b =>
+    b.classList.toggle("on", b.dataset.tab === name));
+  window.scrollTo(0, 0);
+  if (name === "tx") renderTx();
+  if (name === "stats") renderStats();
+}
+
+/* =========================================================
+   홈 렌더링
+   ========================================================= */
+function renderHome() {
+  // 계좌 카드
+  $("#account-list").innerHTML = DB.accounts.map(a => `
+    <div class="card account">
+      <div class="acc-head">
+        <div>
+          <div class="acc-name">${a.name}</div>
+          <div class="acc-num">${a.num}</div>
+        </div>
+        <button class="eye" onclick="toggleHide()">${hideBalance ? "🙈" : "👁️"}</button>
+      </div>
+      <div class="acc-balance">${hideBalance ? "•••••••" : won(a.balance) + '<small>원</small>'}</div>
+      <div class="acc-actions">
+        <button class="btn btn-yellow" onclick="startTransfer()">이체</button>
+        <button class="btn btn-gray" onclick="go('tx')">내역</button>
+      </div>
+    </div>`).join("");
+
+  // 최근 거래 3건
+  $("#recent-tx").innerHTML = DB.transactions.slice(0, 3).map(txRowHTML).join("");
+
+  // 인사 + 날짜
+  const h = new Date().getHours();
+  const hi = h < 6 ? "고요한 새벽이에요," : h < 12 ? "좋은 아침이에요," : h < 18 ? "좋은 오후예요," : "편안한 저녁이에요,";
+  $("#greeting").innerHTML = `${hi}<br>스타님 👋`;
+  $("#today").textContent = new Date().toLocaleDateString("ko-KR", { month: "long", day: "numeric", weekday: "long" });
+}
+
+function toggleHide() {
+  hideBalance = !hideBalance;
+  localStorage.setItem("kbclone-hide", hideBalance ? "1" : "0");
+  renderHome();
+}
+
+function txRowHTML(t) {
+  const minus = t.amount < 0;
+  return `
+    <div class="tx-row">
+      <div class="tx-icon">${CAT_ICON[t.cat] || "💳"}</div>
+      <div class="tx-info">
+        <div class="tx-name">${t.name}</div>
+        <div class="tx-meta">${fmtDate(t.date)} · ${t.cat}</div>
+      </div>
+      <div class="tx-amt ${minus ? "minus" : "plus"}">${minus ? "-" : "+"}${won(t.amount)}원</div>
+    </div>`;
+}
+
+/* =========================================================
+   거래내역: 검색 + 칩 필터 + 날짜 그룹핑
+   ========================================================= */
+function renderChips() {
+  const cats = ["전체", ...new Set(DB.transactions.map(t => t.cat))];
+  $("#chips").innerHTML = cats.map(c =>
+    `<button class="chip ${c === activeChip ? "on" : ""}" onclick="setChip('${c}')">${c}</button>`).join("");
+}
+function setChip(c) { activeChip = c; renderChips(); renderTx(); }
+
+function renderTx() {
+  const q = ($("#search-input").value || "").trim();
+
+  // 1) 필터: 칩 + 검색어 — 핵심은 filter() 두 번이 전부라는 것
+  let list = DB.transactions;
+  if (activeChip !== "전체") list = list.filter(t => t.cat === activeChip);
+  if (q) list = list.filter(t => t.name.includes(q));
+
+  if (!list.length) { $("#tx-list").innerHTML = `<div class="empty">거래 내역이 없어요</div>`; return; }
+
+  // 2) 날짜별 그룹핑: reduce 로 { "2026-07-02": [...], ... } 형태로 묶기
+  const groups = list.reduce((acc, t) => ((acc[t.date] ||= []).push(t), acc), {});
+
+  // 3) 최신 날짜부터 렌더링
+  $("#tx-list").innerHTML = Object.keys(groups).sort().reverse().map(date => `
+    <div class="date-group">
+      <div class="date-label">${fmtDate(date)}</div>
+      <div class="card" style="padding:6px 20px">${groups[date].map(txRowHTML).join("")}</div>
+    </div>`).join("");
+}
+
+/* =========================================================
+   이체 플로우: 받는사람 → 금액 키패드 → 완료
+   ========================================================= */
+let transfer = { payee: null, amount: 0 };
+
+function startTransfer() {
+  transfer = { payee: null, amount: 0 };
+  $("#payee-list").innerHTML = DB.payees.map(p => `
+    <button class="pick-acc" onclick="pickPayee(${p.id})">
+      <div class="card">
+        <div>
+          <div style="font-weight:700">${p.name}</div>
+          <div class="acc-num">${p.bank} ${p.num}</div>
+        </div>
+        <span class="arrow">›</span>
+      </div>
+    </button>`).join("");
+  showStep(1);
+  go("transfer");
+}
+
+function showStep(n) {
+  document.querySelectorAll(".step").forEach(s => s.classList.remove("active"));
+  $("#step-" + n).classList.add("active");
+}
+
+function pickPayee(id) {
+  transfer.payee = DB.payees.find(p => p.id === id);
+  transfer.amount = 0;
+  $("#transfer-to").textContent = `${transfer.payee.name}님에게`;
+  updateAmount();
+  showStep(2);
+}
+
+function key(k) {
+  let s = String(transfer.amount);
+  if (k === "back") s = s.slice(0, -1) || "0";
+  else if (s.length < 9) s = (s === "0" ? "" : s) + k;
+  transfer.amount = Number(s);
+  updateAmount();
+}
+
+function updateAmount() {
+  const v = $("#amount-view"), w = $("#amount-warn");
+  if (transfer.amount === 0) { v.textContent = "보낼 금액 입력"; v.classList.add("placeholder"); }
+  else { v.textContent = won(transfer.amount) + "원"; v.classList.remove("placeholder"); }
+  w.textContent = transfer.amount > DB.accounts[0].balance ? "잔액이 부족해요" : "";
+}
+
+function confirmTransfer() {
+  if (transfer.amount === 0) return;
+  if (transfer.amount > DB.accounts[0].balance) return;
+
+  // "서버 처리"를 로컬 상태 변경으로 대체
+  DB.accounts[0].balance -= transfer.amount;
+  DB.transactions.unshift({
+    id: Date.now(),
+    date: new Date().toISOString().slice(0, 10),
+    name: `${transfer.payee.name}님께 이체`,
+    cat: "이체",
+    amount: -transfer.amount,
+  });
+  save();
+
+  $("#done-title").textContent = "이체 완료";
+  $("#done-desc").textContent = `${transfer.payee.name}님에게 ${won(transfer.amount)}원을 보냈어요`;
+  renderHome();
+  showStep(3);
+}
+
+/* =========================================================
+   소비분석: reduce 로 카테고리 합계 → conic-gradient 도넛
+   ========================================================= */
+function renderStats() {
+  const spend = DB.transactions.filter(t => t.amount < 0);
+  const total = spend.reduce((s, t) => s + Math.abs(t.amount), 0);
+
+  // 카테고리별 합계
+  const byCat = spend.reduce((acc, t) => {
+    acc[t.cat] = (acc[t.cat] || 0) + Math.abs(t.amount);
+    return acc;
+  }, {});
+  const sorted = Object.entries(byCat).sort((a, b) => b[1] - a[1]);
+
+  // conic-gradient 문자열 조립: "색 0% 32%, 색 32% 51%, ..."
+  let acc = 0;
+  const segs = sorted.map(([cat, amt]) => {
+    const from = acc / total * 100;
+    acc += amt;
+    const to = acc / total * 100;
+    return `${CAT_COLOR[cat] || "#C9CCD1"} ${from}% ${to}%`;
+  });
+  $("#donut").style.background = `conic-gradient(${segs.join(",")})`;
+  $("#donut-total").textContent = won(total) + "원";
+
+  $("#cat-list").innerHTML = sorted.map(([cat, amt]) => `
+    <div class="cat-row">
+      <span class="dot" style="background:${CAT_COLOR[cat] || "#C9CCD1"}"></span>
+      <span class="cat-name">${CAT_ICON[cat] || ""} ${cat}</span>
+      <span class="cat-pct">${Math.round(amt / total * 100)}%</span>
+      <span class="cat-amt">${won(amt)}원</span>
+    </div>`).join("");
+}
+
+/* ---------- 초기 렌더 ---------- */
+function renderAll() { renderHome(); renderChips(); renderTx(); }
+renderAll();
+</script>
+</body>
+</html>
