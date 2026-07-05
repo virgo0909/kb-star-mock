@@ -525,7 +525,7 @@ a[href^="tel"]{color:inherit;text-decoration:none}
     </div>
 
     <div class="range">
-      <div class="d" id="range-label">2026.04.03 ~ 2026.07.02</div>
+      <div class="d" id="range-label">2026.04.03 ~ 2026.07.05</div>
       <div class="tg">잔액표기 <span class="toggle on" id="show-bal-toggle" onclick="toggleShowBal(this)"></span></div>
     </div>
 
@@ -720,7 +720,7 @@ function closeMenu(silent){ document.getElementById('drawer').classList.remove('
    ========================================================= */
 let DATA = null;                 // 로드된 데이터
 let showBal = true;              // 잔액표기 on/off
-const ANCHOR = '2026-07-02';     // 조회 기준일(=오늘)
+const ANCHOR = '2026-07-05';     // 조회 기준일(=오늘)
 
 // 조회 조건 상태
 let filter = { period:'3m', from:null, to:null, type:'all', sort:'desc', amtMin:null, amtMax:null };
